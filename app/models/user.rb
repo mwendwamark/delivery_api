@@ -20,4 +20,8 @@ class User < ApplicationRecord
   def delivery_person?
     role == 2
   end
+
+  has_one :delivery_person_profile
+  has_one :customer_profile
+  has_one :admin_profile
 end

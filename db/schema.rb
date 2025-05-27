@@ -10,9 +10,48 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_22_144952) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_22_151200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "admin_profiles", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.jsonb "permissions"
+    t.boolean "is_super_admin", default: false
+    t.datetime "last_activity_at"
+    t.string "status", default: "active"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_admin_profiles_on_user_id"
+  end
+
+  create_table "customer_profiles", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "address"
+    t.string "preferred_payment_method"
+    t.text "delivery_instructions"
+    t.boolean "is_verified", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_customer_profiles_on_user_id"
+  end
+
+  create_table "delivery_person_profiles", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "vehicle_type"
+    t.string "vehicle_registration_number"
+    t.float "current_latitude"
+    t.float "current_longitude"
+    t.string "availability_status"
+    t.float "rating", default: 0.0
+    t.integer "completed_deliveries_count", default: 0
+    t.string "license_number"
+    t.string "id_document_url"
+    t.boolean "is_verified", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_delivery_person_profiles_on_user_id"
+  end
 
   create_table "jwt_denylists", force: :cascade do |t|
     t.string "jti", null: false
@@ -31,7 +70,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_22_144952) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "role", default: 0, null: false
+    t.string "first_name"
+    t.string "last_name"
+    t.string "phone_number"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
+
+  add_foreign_key "admin_profiles", "users"
+  add_foreign_key "customer_profiles", "users"
+  add_foreign_key "delivery_person_profiles", "users"
 end
