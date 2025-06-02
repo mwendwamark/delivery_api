@@ -24,4 +24,7 @@ class User < ApplicationRecord
   has_one :delivery_person_profile
   has_one :customer_profile
   has_one :admin_profile
+  has_many :addresses
+  has_many :orders
+  has_one :cart
 end
