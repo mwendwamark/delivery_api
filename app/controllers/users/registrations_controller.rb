@@ -43,11 +43,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
   protected
 
   def configure_sign_up_params
-    devise_parameter_sanitizer.permit(:sign_up, keys: [:first_name, :last_name, :phone_number, :role])
+    devise_parameter_sanitizer.permit(:sign_up, keys: [:first_name, :last_name, :phone_number, :role, :date_of_birth])
   end
 
   def configure_account_update_params
-    devise_parameter_sanitizer.permit(:account_update, keys: [:first_name, :last_name, :phone_number, :role])
+    devise_parameter_sanitizer.permit(:account_update, keys: [:first_name, :last_name, :phone_number, :role, :date_of_birth])
   end
 
   # The path used after sign up.
@@ -63,11 +63,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
   private
 
   def sign_up_params
-    params.require(:user).permit(:email, :password, :password_confirmation, :role, :first_name, :last_name, :phone_number)
+    params.require(:user).permit(:email, :password, :password_confirmation, :role, :first_name, :last_name, :phone_number, :date_of_birth)
   end
 
   def account_update_params
-    params.require(:user).permit(:email, :password, :password_confirmation, :current_password, :role, :first_name, :last_name, :phone_number)
+    params.require(:user).permit(:email, :password, :password_confirmation, :current_password, :role, :first_name, :last_name, :phone_number, :date_of_birth)
   end
 
   def respond_with(resource, _opts = {})
