@@ -72,8 +72,9 @@ class ProductsController < ApplicationController
   # This is needed because you're generating URLs in the controller directly
   include Rails.application.routes.url_helpers
 
+  skip_before_action :authenticate_request, only: [:index, :show]
   before_action :set_product, only: [:show, :update, :destroy]
-  before_action :authorize_admin, except: [:create,:index, :show]
+  before_action :authorize_admin, except: [:index, :show]
 
   def index
     @products = Product.all
@@ -126,14 +127,12 @@ class ProductsController < ApplicationController
       :country,
       :abv,
       :description,
-      :image # <--- CRUCIAL: Permit the :image attachment, NOT :image_url
+      :image
     )
   end
 
   def authorize_admin
-    # Ensure current_user is available and has an admin? method
-    # You might need to authenticate_user! before authorize_admin
-    unless current_user&.admin? # Use & for safe navigation
+    unless current_user&.admin?
       render json: { error: 'Unauthorized. Admin access required.' }, status: :forbidden
     end
   end
