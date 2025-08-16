@@ -1,0 +1,103 @@
+# app/controllers/api/paystack_payments_controller.rb
+module Api
+  class PaystackPaymentsController < ApplicationController
+    # POST /api/paystack_initiate_payment
+    def initiate
+      # 1. Validate required parameters
+      unless params[:amount].present? && params[:email].present? && params[:cart_items].present?
+        render json: { error: 'Missing required parameters: amount, email, cart_items' }, status: :bad_request
+        return
+      end
+
+      begin
+        # 2. Get the delivery address, handling both manual and saved addresses
+        delivery_address = nil
+
+        if params[:delivery_address_id].present?
+          # If a saved address ID is provided, find it for the current user
+          delivery_address = current_user.addresses.find_by(id: params[:delivery_address_id])
+          unless delivery_address
+            render json: { error: 'Invalid delivery address ID' }, status: :unprocessable_entity
+            return
+          end
+        elsif params[:manual_address].present?
+          # If manual address data is provided, create a new address record
+          manual_address_data = params.require(:manual_address).permit(:recipient_name, :recipient_phone, :street_address, :location, :latitude, :longitude)
+          delivery_address = current_user.addresses.new(manual_address_data)
+          unless delivery_address.save
+            render json: { error: delivery_address.errors.full_messages }, status: :unprocessable_entity
+            return
+          end
+        else
+          # If neither a saved address nor manual data is present, return an error
+          render json: { error: 'Delivery address or manual address data is required' }, status: :unprocessable_entity
+          return
+        end
+
+        # 3. Create the order (pending payment) with the determined address
+        order = Order.new(
+          user: current_user,
+          address: delivery_address,
+          total_price: params[:amount].to_i,
+          payment_status: 'pending',
+          status: 'processing'
+        )
+
+        # 4. Create order items
+        params[:cart_items].each do |item|
+          product = Product.find_by(id: item[:product_id])
+          if product
+            order.order_items.build(
+              product: product,
+              quantity: item[:quantity],
+              size: item[:size],
+              price_per_unit: item[:price_per_unit]
+            )
+          end
+        end
+
+        if order.save
+          # 5. Generate Paystack reference and initiate transaction
+          reference = "ORDER_#{order.id}_#{Time.current.to_i}"
+          paystack_service = PaystackService.new
+          paystack_response = paystack_service.initialize_transaction(
+            email: params[:email],
+            amount: (params[:amount].to_f * 100).to_i, # Convert to kobo
+            reference: reference,
+            callback_url: Rails.application.routes.url_helpers.api_paystack_callback_url(host: request.base_url)
+          )
+
+          if paystack_response[:status]
+            # Update order with Paystack reference
+            order.update(
+              paystack_reference: reference,
+              paystack_transaction_id: paystack_response[:data][:id]
+            )
+
+            render json: {
+              status: true,
+              message: 'Transaction initialized successfully',
+              order_id: order.id,
+              reference: reference,
+              authorization_url: paystack_response[:data][:authorization_url],
+              access_code: paystack_response[:data][:access_code]
+            }, status: :ok
+          else
+            # Delete the order if Paystack initialization fails
+            order.destroy
+            render json: { 
+              error: 'Failed to initialize payment with Paystack',
+              details: paystack_response[:message]
+            }, status: :unprocessable_entity
+          end
+        else
+          render json: { error: order.errors.full_messages }, status: :unprocessable_entity
+        end
+
+      rescue => e
+        Rails.logger.error "Error initiating Paystack payment: #{e.message}"
+        render json: { error: 'Internal server error' }, status: :internal_server_error
+      end
+    end
+  end
+end

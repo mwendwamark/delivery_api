@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_11_160659) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_30_093924) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -50,6 +50,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_11_160659) do
     t.float "longitude"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "is_manual"
+    t.string "recipient_name"
+    t.string "recipient_phone"
     t.index ["user_id"], name: "index_addresses_on_user_id"
   end
 
@@ -142,7 +145,20 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_11_160659) do
     t.text "delivery_instructions"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "payment_status", default: "unpaid"
+    t.string "paystack_reference"
+    t.string "paystack_transaction_id"
+    t.string "paystack_status"
+    t.string "payment_method"
+    t.string "payment_channel"
+    t.string "payment_currency", default: "NGN"
+    t.decimal "payment_amount", precision: 10, scale: 2
+    t.decimal "paystack_amount", precision: 10, scale: 2
+    t.string "paystack_currency"
+    t.string "paystack_channel"
+    t.string "receipt_url"
     t.index ["address_id"], name: "index_orders_on_address_id"
+    t.index ["paystack_reference"], name: "index_orders_on_paystack_reference", unique: true
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
