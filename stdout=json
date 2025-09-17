@@ -1,0 +1,12 @@
+t=2025-09-17T05:58:50+0300 lvl=info msg="no configuration paths supplied"
+t=2025-09-17T05:58:50+0300 lvl=info msg="using configuration at default config path" path=/home/nthei/.config/ngrok/ngrok.yml
+t=2025-09-17T05:58:50+0300 lvl=info msg="open config file" path=/home/nthei/.config/ngrok/ngrok.yml err=nil
+t=2025-09-17T05:58:50+0300 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2025-09-17T05:58:52+0300 lvl=info msg="update available" obj=updater
+t=2025-09-17T05:58:52+0300 lvl=info msg="client session established" obj=tunnels.session
+t=2025-09-17T05:58:52+0300 lvl=info msg="tunnel session started" obj=tunnels.session
+t=2025-09-17T05:58:52+0300 lvl=info msg="started tunnel" obj=tunnels name=command_line addr=http://localhost:3000 url=https://375258028feb.ngrok-free.app
+t=2025-09-17T05:59:06+0300 lvl=info msg="Got quit command" obj=consoleui
+t=2025-09-17T05:59:06+0300 lvl=info msg="received stop request" obj=app stopReq="{err:<nil> restart:false}"
+t=2025-09-17T05:59:06+0300 lvl=info msg="session closing" obj=tunnels.session err=nil
+t=2025-09-17T05:59:06+0300 lvl=info msg="accept failed" obj=tunnels.session obj=csess id=f63c59eb378b err="reconnecting session closed"

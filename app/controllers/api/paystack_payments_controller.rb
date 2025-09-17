@@ -60,19 +60,30 @@ module Api
           # 5. Generate Paystack reference and initiate transaction
           reference = "ORDER_#{order.id}_#{Time.current.to_i}"
           paystack_service = PaystackService.new
+          
+          # Use the ngrok URL for webhook, not callback
+          webhook_url = "https://282ace648f6a.ngrok-free.app/api/paystack_callback"
+          
           paystack_response = paystack_service.initialize_transaction(
             email: params[:email],
             amount: (params[:amount].to_f * 100).to_i, # Convert to kobo
             reference: reference,
-            callback_url: Rails.application.routes.url_helpers.api_paystack_callback_url(host: request.base_url)
+            callback_url: webhook_url # This will be used for both callback and webhook
           )
 
+          Rails.logger.info "=== PAYSTACK INITIALIZATION ==="
+          Rails.logger.info "Order ID: #{order.id}"
+          Rails.logger.info "Reference: #{reference}"
+          Rails.logger.info "Paystack Response: #{paystack_response.inspect}"
+
           if paystack_response[:status]
-            # Update order with Paystack reference
-            order.update(
+            # Update order with Paystack reference and transaction ID
+            order.update!(
               paystack_reference: reference,
-              paystack_transaction_id: paystack_response[:data][:id]
+              paystack_transaction_id: paystack_response.dig(:data, :id)
             )
+
+            Rails.logger.info "Order updated with Paystack details: Reference=#{reference}, Transaction_ID=#{paystack_response.dig(:data, :id)}"
 
             render json: {
               status: true,
@@ -96,6 +107,7 @@ module Api
 
       rescue => e
         Rails.logger.error "Error initiating Paystack payment: #{e.message}"
+        Rails.logger.error e.backtrace.join("\n")
         render json: { error: 'Internal server error' }, status: :internal_server_error
       end
     end

@@ -22,17 +22,27 @@ Rails.application.routes.draw do
     # Paystack payment initiation
     post 'paystack_initiate_payment', to: 'paystack_payments#initiate'
     
-    # Paystack webhook callback endpoint (MUST match the URL registered in Paystack dashboard)
+    # Paystack webhook callback endpoint - this handles both webhooks and redirects
     post 'paystack_callback', to: 'paystack_webhooks#handle_callback'
+    get 'paystack_callback', to: 'paystack_webhooks#handle_callback' # For redirect callbacks
+    
+    # Development and testing endpoints
+    if Rails.env.development? || Rails.env.test?
+      post 'test_webhook', to: 'paystack_webhooks#test_webhook'
+      get 'test_webhook/:reference', to: 'paystack_webhooks#test_webhook'
+      
+      # Debug endpoint to check order status manually
+      get 'debug_order/:id', to: 'orders#debug_order'
+    end
 
     # Orders routes
     resources :orders, only: [] do
       member do
-        get 'status'   # GET /api/orders/:id/status
-        get 'receipt'  # GET /api/orders/:id/receipt
+        get 'status'
+        get 'receipt'
       end
       collection do
-        post 'create_cash_on_delivery'  # FIXED: Added missing 'e'
+        post 'create_cash_on_delivery'
       end
     end
   end

@@ -71,4 +71,10 @@ Rails.application.configure do
   # Set default URL options for Active Storage
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
   Rails.application.routes.default_url_options[:host] = "localhost:3000"
+
+  config.hosts.clear
+  config.hosts << "localhost"
+  config.hosts << "127.0.0.1"
+  config.hosts << /.*\.ngrok-free\.app/ # Allow any ngrok subdomain
+  config.hosts << /.*\.ngrok\.io/      # Allow any ngrok.io subdomain (older format)
 end
