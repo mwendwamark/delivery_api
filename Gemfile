@@ -52,7 +52,6 @@ group :development, :test do
   gem 'dotenv-rails'
   gem 'sidekiq'
   gem 'prawn'
+  gem 'prawn-table', '~> 0.2.2'
   gem 'httparty'
-
-
 end

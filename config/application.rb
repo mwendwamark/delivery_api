@@ -33,5 +33,7 @@ module DeliveryApi
     config.session_store :cookie_store, key: "_ngureez_session"
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use config.session_store, config.session_options
+    config.time_zone = 'Africa/Nairobi'
+    config.active_record.default_timezone = :utc
   end
 end

@@ -156,16 +156,20 @@ module Api
           Rails.logger.info "Cart cleared for user #{order.user.id}"
         end
 
-        # Generate receipt (if service exists)
+        # Generate receipt
         begin
-          if defined?(ReceiptGeneratorService)
-            ReceiptGeneratorService.new(order).generate_pdf_and_attach
-            Rails.logger.info "Receipt generated for Order #{order.id}"
+          receipt_service = ReceiptGeneratorService.new(order)
+          if receipt_service.generate_pdf_and_attach
+            Rails.logger.info "Receipt generated successfully for Order #{order.id}"
+            Rails.logger.info "Receipt URL: #{order.reload.receipt_url}"
           else
-            Rails.logger.warn "ReceiptGeneratorService not found"
+            Rails.logger.error "Receipt generation returned false for Order #{order.id}"
           end
+        rescue NameError => e
+          Rails.logger.error "ReceiptGeneratorService not found: #{e.message}"
         rescue => e
-          Rails.logger.error "Failed to generate receipt: #{e.message}"
+          Rails.logger.error "Failed to generate receipt for Order #{order.id}: #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
         end
 
       when 'charge.failed', 'charge.abandoned'
