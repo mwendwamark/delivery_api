@@ -1,3 +1,4 @@
+# config/routes.rb
 Rails.application.routes.draw do
   devise_for :users,
     defaults: { format: :json },
@@ -35,11 +36,13 @@ Rails.application.routes.draw do
       get 'debug_order/:id', to: 'orders#debug_order'
     end
 
-    # Orders routes
+    # Orders routes - UPDATED with receipt endpoints
     resources :orders, only: [] do
       member do
         get 'status'
         get 'receipt'
+        post 'generate_receipt'  # NEW: Generate receipt endpoint
+        get 'receipt_info'       # NEW: Get receipt information
       end
       collection do
         post 'create_cash_on_delivery'

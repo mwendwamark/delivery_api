@@ -1,170 +1,6 @@
-# require 'prawn'
-
-# class ReceiptGeneratorService
-#   def initialize(order)
-#     @order = order
-#   end
-
-#   def generate_pdf_and_attach
-#     Rails.logger.info "=== GENERATING RECEIPT FOR ORDER #{@order.id} ==="
-#     Rails.logger.info "Payment Status: #{@order.payment_status}"
-    
-#     unless ['Paystack Paid', 'Mpesa Paid', 'Cash on Delivery'].include?(@order.payment_status)
-#       Rails.logger.warn "Receipt not generated for order #{@order.id} as payment status is '#{@order.payment_status}'."
-#       return false
-#     end
-
-#     begin
-#       pdf_filename = "receipt_order_#{@order.id}_#{Time.current.to_i}.pdf"
-#       receipts_dir = Rails.root.join('public', 'receipts')
-#       pdf_file_path = receipts_dir.join(pdf_filename)
-
-#       FileUtils.mkdir_p(receipts_dir) unless File.directory?(receipts_dir)
-#       Rails.logger.info "Receipts directory created at: #{receipts_dir}"
-
-#       # Generate PDF without tables
-#       Prawn::Document.generate(pdf_file_path.to_s, page_size: 'A4', margin: 40) do |pdf|
-#         generate_simple_receipt_content(pdf)
-#       end
-
-#       Rails.logger.info "PDF generated at: #{pdf_file_path}"
-
-#       unless File.exist?(pdf_file_path)
-#         Rails.logger.error "PDF file was not created at #{pdf_file_path}"
-#         return false
-#       end
-
-#       receipt_public_url = "/receipts/#{pdf_filename}"
-      
-#       if @order.update(receipt_url: receipt_public_url)
-#         Rails.logger.info "Receipt URL updated successfully: #{receipt_public_url}"
-#         return true
-#       else
-#         Rails.logger.error "Failed to update receipt URL for Order #{@order.id}: #{@order.errors.full_messages.join(', ')}"
-#         File.delete(pdf_file_path) if File.exist?(pdf_file_path)
-#         return false
-#       end
-
-#     rescue => e
-#       Rails.logger.error "Error generating receipt for Order #{@order.id}: #{e.message}"
-#       Rails.logger.error e.backtrace.first(5).join("\n")
-#       return false
-#     end
-#   end
-
-#   private
-
-#   def generate_simple_receipt_content(pdf)
-#     # Header
-#     pdf.font "Helvetica"
-#     pdf.text "LIQUOR STORE", size: 28, style: :bold, align: :center
-#     pdf.text "Official Receipt", size: 14, align: :center
-#     pdf.move_down 5
-#     pdf.stroke_horizontal_rule
-#     pdf.move_down 20
-
-#     # Order Information
-#     pdf.text "Receipt ##{@order.id.to_s.rjust(6, '0')}", size: 16, style: :bold
-#     pdf.text "Date: #{@order.created_at.strftime('%B %d, %Y at %I:%M %p')}", size: 10
-#     pdf.move_down 15
-
-#     # Customer Information
-#     pdf.text "CUSTOMER INFORMATION", size: 12, style: :bold
-#     pdf.move_down 5
-#     customer_name = "#{@order.user&.first_name} #{@order.user&.last_name}".strip
-#     customer_name = "Walk-in Customer" if customer_name.blank?
-#     pdf.text "Name: #{customer_name}", size: 10
-#     pdf.text "Email: #{@order.user&.email || 'N/A'}", size: 10
-    
-#     if @order.address
-#       pdf.text "Delivery Address: #{@order.address.street_address}, #{@order.address.location}", size: 10
-#     end
-#     pdf.move_down 15
-
-#     # Order Items
-#     pdf.text "ORDER ITEMS", size: 12, style: :bold
-#     pdf.move_down 5
-#     pdf.stroke_horizontal_rule
-#     pdf.move_down 10
-
-#     if @order.order_items.any?
-#       @order.order_items.includes(:product).each_with_index do |item, index|
-#         product_name = item.product&.name || "Unknown Product"
-#         size = item.size || "Standard"
-#         quantity = item.quantity || 0
-#         price_per_unit = item.price_per_unit || 0
-#         total = quantity * price_per_unit
-        
-#         pdf.text "#{index + 1}. #{product_name}", size: 11, style: :bold
-#         pdf.indent(20) do
-#           pdf.text "Size: #{size} | Quantity: #{quantity} | Unit Price: #{format_currency(price_per_unit)}", size: 10
-#           pdf.text "Line Total: #{format_currency(total)}", size: 10, style: :bold
-#         end
-#         pdf.move_down 10
-#       end
-#     else
-#       pdf.text "No items found", size: 10, style: :italic
-#     end
-
-#     pdf.stroke_horizontal_rule
-#     pdf.move_down 15
-
-#     # Totals
-#     subtotal = calculate_subtotal
-#     pdf.text "Subtotal: #{format_currency(subtotal)}", size: 11, align: :right
-#     pdf.text "Delivery Fee: #{format_currency(0)}", size: 11, align: :right
-#     pdf.text "Tax: #{format_currency(0)}", size: 11, align: :right
-#     pdf.move_down 5
-#     pdf.stroke_horizontal_rule
-#     pdf.move_down 5
-#     total_amount = @order.total_price || subtotal
-#     pdf.text "TOTAL: #{format_currency(total_amount)}", size: 14, style: :bold, align: :right
-#     pdf.move_down 20
-
-#     # Payment Information
-#     pdf.text "PAYMENT INFORMATION", size: 12, style: :bold
-#     pdf.move_down 5
-#     pdf.stroke_horizontal_rule
-#     pdf.move_down 10
-    
-#     pdf.text "Payment Status: #{@order.payment_status}", size: 10
-    
-#     case @order.payment_status
-#     when 'Paystack Paid'
-#       pdf.text "Payment Method: Paystack", size: 10
-#       pdf.text "Reference: #{@order.paystack_reference}" if @order.paystack_reference
-#       pdf.text "Transaction ID: #{@order.paystack_transaction_id}" if @order.paystack_transaction_id
-#       pdf.text "Channel: #{@order.paystack_channel&.humanize}" if @order.paystack_channel
-#     when 'Mpesa Paid'
-#       pdf.text "Payment Method: M-Pesa", size: 10
-#     when 'Cash on Delivery'
-#       pdf.text "Payment Method: Cash on Delivery", size: 10
-#       pdf.text "Amount Due on Delivery: #{format_currency(total_amount)}", size: 10, style: :bold
-#     end
-    
-#     pdf.move_down 30
-
-#     # Footer
-#     pdf.stroke_horizontal_rule
-#     pdf.move_down 10
-#     pdf.text "Thank you for your business!", align: :center, size: 12, style: :bold
-#     pdf.text "For support: support@liquorchapchap.com | +254 717 084 324", align: :center, size: 9
-#     pdf.move_down 10
-#     pdf.text "Generated on #{Time.current.strftime('%Y-%m-%d at %I:%M %p')}", 
-#              align: :center, size: 8, style: :italic
-#   end
-
-#   def calculate_subtotal
-#     @order.order_items.sum { |item| (item.quantity || 0) * (item.price_per_unit || 0) }
-#   end
-
-#   def format_currency(amount)
-#     "KES #{sprintf('%.2f', amount.to_f)}"
-#   end
-# end
-
 require 'prawn'
 require 'prawn/table'
+require 'stringio'
 
 class ReceiptGeneratorService
   def initialize(order)
@@ -181,36 +17,25 @@ class ReceiptGeneratorService
     end
 
     begin
+      pdf = Prawn::Document.new(page_size: 'A4', margin: 40)
+      generate_professional_receipt(pdf)
+      pdf_content = pdf.render
+
       pdf_filename = "receipt_order_#{@order.id}_#{Time.current.to_i}.pdf"
-      receipts_dir = Rails.root.join('public', 'receipts')
-      pdf_file_path = receipts_dir.join(pdf_filename)
 
-      FileUtils.mkdir_p(receipts_dir) unless File.directory?(receipts_dir)
-      Rails.logger.info "Receipts directory created at: #{receipts_dir}"
+      @order.receipt.attach(
+        io: StringIO.new(pdf_content),
+        filename: pdf_filename,
+        content_type: 'application/pdf'
+      )
 
-      # Generate PDF with professional table layout
-      Prawn::Document.generate(pdf_file_path.to_s, page_size: 'A4', margin: 40) do |pdf|
-        generate_professional_receipt(pdf)
-      end
-
-      Rails.logger.info "PDF generated at: #{pdf_file_path}"
-
-      unless File.exist?(pdf_file_path)
-        Rails.logger.error "PDF file was not created at #{pdf_file_path}"
-        return false
-      end
-
-      receipt_public_url = "/receipts/#{pdf_filename}"
-      
-      if @order.update(receipt_url: receipt_public_url)
-        Rails.logger.info "Receipt URL updated successfully: #{receipt_public_url}"
+      if @order.receipt.attached?
+        Rails.logger.info "Receipt attached successfully to S3 for Order #{@order.id}"
         return true
       else
-        Rails.logger.error "Failed to update receipt URL for Order #{@order.id}: #{@order.errors.full_messages.join(', ')}"
-        File.delete(pdf_file_path) if File.exist?(pdf_file_path)
+        Rails.logger.error "Failed to attach receipt to S3 for Order #{@order.id}"
         return false
       end
-
     rescue => e
       Rails.logger.error "Error generating receipt for Order #{@order.id}: #{e.message}"
       Rails.logger.error e.backtrace.first(5).join("\n")
@@ -419,7 +244,7 @@ class ReceiptGeneratorService
     
     totals_data = [
       ["", "", "", "Subtotal", format_price_only(subtotal)],
-      ["", "", "", "Delivery fee", format_price_only(10)],
+      ["", "", "", "Delivery fee", format_price_only(0)],
       ["", "", "", "Tax (16%)", "Inclusive"],
       ["", "", "", "Total", format_price_only(total_amount)]
     ]
@@ -491,7 +316,7 @@ class ReceiptGeneratorService
       combined_data << ["Payment method: M-Pesa", ""]
     when 'Cash on Delivery'
       combined_data << ["Payment method: Cash on Delivery", ""]
-      combined_data << ["Amount Due: #{format_currency(total_amount)}", ""]
+      combined_data << ["Amount Due: #{format_currency(@order.total_price)}", ""]
     end
     
     pdf.table(combined_data,

@@ -1,14 +1,37 @@
+# app/models/order.rb
 class Order < ApplicationRecord
   belongs_to :user
   belongs_to :address
-  has_many :order_items, dependent: :destroy # Add dependent: :destroy to clean up items when order is deleted
-  has_one :payment # You can keep this, but the primary payment info will be on Order itself now.
+  has_many :order_items, dependent: :destroy
+  has_one :payment
+  has_one_attached :receipt
 
-  # If you want to use Active Storage for PDF receipts:
-  # has_one_attached :receipt_pdf
-
-  # Add validations if needed, e.g., presence of total_price, status
   validates :total_price, presence: true, numericality: { greater_than: 0 }
   validates :payment_status, presence: true
   validates :status, presence: true
+
+  def generate_and_store_receipt
+    if ReceiptGeneratorService.new(self).generate_pdf_and_attach
+      receipt_url
+    else
+      Rails.logger.error "Failed to generate receipt for order #{id}"
+      nil
+    end
+  end
+
+  def receipt_url
+    return nil unless receipt.attached?
+    # Use rails_blob_url to generate a presigned S3 URL
+    Rails.application.routes.url_helpers.rails_blob_url(receipt, disposition: "attachment")
+  end
+
+  def receipt_download_url(expires_in: 1.hour)
+    return nil unless receipt.attached?
+    # Use Active Storage's service_url for a presigned, expiring URL
+    receipt.service_url(expires_in: expires_in, disposition: "attachment")
+  end
+
+  def has_receipt?
+    receipt.attached?
+  end
 end
