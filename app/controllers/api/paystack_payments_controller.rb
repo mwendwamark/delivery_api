@@ -37,7 +37,7 @@ module Api
         # 3. Create the order (pending payment) with the determined address
         order = Order.new(
           user: current_user,
-          address: delivery_address,
+          shipping_address_id: delivery_address.id,
           total_price: params[:amount].to_i,
           payment_status: 'pending',
           status: 'processing'

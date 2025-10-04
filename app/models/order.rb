@@ -1,7 +1,8 @@
 # app/models/order.rb
 class Order < ApplicationRecord
   belongs_to :user
-  belongs_to :address
+  belongs_to :shipping_address, class_name: 'Address', foreign_key: 'shipping_address_id'
+  belongs_to :billing_address, class_name: 'Address', foreign_key: 'billing_address_id', optional: true
   has_many :order_items, dependent: :destroy
   has_one :payment
   has_one_attached :receipt

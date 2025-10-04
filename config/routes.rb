@@ -37,7 +37,7 @@ Rails.application.routes.draw do
     end
 
     # Orders routes - UPDATED with receipt endpoints
-    resources :orders, only: [] do
+    resources :orders, only: [:index] do
       member do
         get 'status'
         get 'receipt'

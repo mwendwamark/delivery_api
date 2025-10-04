@@ -125,8 +125,8 @@ class ReceiptGeneratorService
     customer_name = "#{@order.user&.first_name} #{@order.user&.last_name}".strip
     customer_name = "Walk-in Customer" if customer_name.blank?
     
-    address_text = @order.address ? 
-      "#{@order.address.street_address}, #{@order.address.location}" : 
+    address_text = @order.shipping_address ? 
+      "#{@order.shipping_address.street_address}, #{@order.shipping_address.location}" : 
       "N/A"
     
     # Billed to section

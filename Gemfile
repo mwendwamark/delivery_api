@@ -39,6 +39,7 @@ gem "devise-jwt"
 gem "rack-cors"
 gem "aws-sdk-s3", require: false
 gem "active_model_serializers"
+gem 'kaminari' # Pagination for the orders list
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -49,9 +50,9 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
-  gem 'dotenv-rails'
-  gem 'sidekiq'
-  gem 'prawn'
-  gem 'prawn-table', '~> 0.2.2'
-  gem 'httparty'
+  gem "dotenv-rails"
+  gem "sidekiq"
+  gem "prawn"
+  gem "prawn-table", "~> 0.2.2"
+  gem "httparty"
 end
