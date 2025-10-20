@@ -1,4 +1,3 @@
-# config/routes.rb
 Rails.application.routes.draw do
   devise_for :users,
     defaults: { format: :json },
@@ -6,6 +5,7 @@ Rails.application.routes.draw do
       registrations: "users/registrations",
       sessions: "users/sessions",
     }
+  
   get "up" => "rails/health#show", as: :rails_health_check
 
   resources :products do
@@ -18,31 +18,32 @@ Rails.application.routes.draw do
     patch "update_item/:product_id", to: "carts#update_item", as: "update_item"
   end
 
-  # --- API ROUTES FOR PAYSTACK & ORDERS ---
+  # --- API ROUTES ---
   namespace :api do
+    # USERS ROUTES - ADD THIS
+    resources :users, only: [:index, :show, :update, :destroy]
+    
     # Paystack payment initiation
     post 'paystack_initiate_payment', to: 'paystack_payments#initiate'
     
-    # Paystack webhook callback endpoint - this handles both webhooks and redirects
+    # Paystack webhook callback endpoint
     post 'paystack_callback', to: 'paystack_webhooks#handle_callback'
-    get 'paystack_callback', to: 'paystack_webhooks#handle_callback' # For redirect callbacks
+    get 'paystack_callback', to: 'paystack_webhooks#handle_callback'
     
     # Development and testing endpoints
     if Rails.env.development? || Rails.env.test?
       post 'test_webhook', to: 'paystack_webhooks#test_webhook'
       get 'test_webhook/:reference', to: 'paystack_webhooks#test_webhook'
-      
-      # Debug endpoint to check order status manually
       get 'debug_order/:id', to: 'orders#debug_order'
     end
 
-    # Orders routes - UPDATED with receipt endpoints
+    # Orders routes
     resources :orders, only: [:index] do
       member do
         get 'status'
         get 'receipt'
-        post 'generate_receipt'  # NEW: Generate receipt endpoint
-        get 'receipt_info'       # NEW: Get receipt information
+        post 'generate_receipt'
+        get 'receipt_info'
       end
       collection do
         post 'create_cash_on_delivery'
