@@ -1,13 +1,13 @@
 module Api
   class OrdersController < ApplicationController
     before_action :authenticate_request
-    before_action :set_order, only: [:status, :download_receipt, :generate_receipt, :receipt_info]
-    before_action :authorize_order_access, only: [:status, :download_receipt, :generate_receipt, :receipt_info]
+    before_action :set_order, only: [:show, :status, :download_receipt, :generate_receipt, :receipt_info]
+    before_action :authorize_order_access, only: [:show, :status, :download_receipt, :generate_receipt, :receipt_info]
 
     ORDERS_PER_PAGE = 15
 
     def index
-      # CHANGED: Admins can see all orders, regular users only see their own
+      # Admins can see all orders, regular users only see their own
       if current_user.admin?
         orders = Order.all
       else
@@ -102,6 +102,13 @@ module Api
       render json: { error: "An internal server error occurred while downloading receipt." }, status: :internal_server_error
     end
 
+    def show
+      render json: @order.as_json(include: order_includes)
+    rescue => e
+      Rails.logger.error "Error fetching order details for order ID #{params[:id]}: #{e.message}"
+      render json: { error: "Failed to fetch order details" }, status: :internal_server_error
+    end
+
     def receipt_info
       if @order.has_receipt?
         render json: {
@@ -188,10 +195,10 @@ module Api
           methods: [:item_total],
         },
         shipping_address: {
-          only: [:id, :street_address, :location, :recipient_name, :recipient_phone],
+          only: [:id, :street_address, :location, :recipient_name, :recipient_phone, :latitude, :longitude],
         },
         billing_address: {
-          only: [:id, :street_address, :location, :recipient_name, :recipient_phone],
+          only: [:id, :street_address, :location, :recipient_name, :recipient_phone, :latitude, :longitude],
         },
       }
     end
