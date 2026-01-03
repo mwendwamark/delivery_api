@@ -227,7 +227,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_25_103800) do
   add_foreign_key "order_items", "products"
   add_foreign_key "orders", "addresses", column: "billing_address_id"
   add_foreign_key "orders", "addresses", column: "shipping_address_id"
-  add_foreign_key "orders", "addresses", column: "shipping_address_id"
   add_foreign_key "orders", "users"
   add_foreign_key "payments", "orders"
   add_foreign_key "product_variants", "products"

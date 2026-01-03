@@ -38,6 +38,7 @@ gem "jwt"
 gem "devise-jwt"
 gem "rack-cors"
 gem "aws-sdk-s3", require: false
+gem "google-cloud-storage"
 gem "active_model_serializers"
 gem 'kaminari' # Pagination for the orders list
 
